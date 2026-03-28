@@ -20,3 +20,14 @@ In production, model efficiency matters as much as accuracy. ML-Inference-Bench 
 - **Visualization Dashboard**: Interactive Plotly Dash dashboard for performance analysis  
 - **Model Zoo**: Supports ResNet50, EfficientNet, YOLOv8, BERT-base, Whisper-tiny  
 - **Exportable Reports**: JSON, CSV, HTML formats for sharing and analysis  
+
+## Pipeline
+PyTorch model
+      ↓
+export to ONNX
+      ↓
+optimize with TensorRT
+      ↓
+benchmark inference
+      ↓
+visualize performance tradeoffs
