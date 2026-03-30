@@ -1,8 +1,15 @@
 import torch
-from transformers import WhisperModel
+from models import whisper
 
-def load():
-    model = WhisperModel.from_pretrained("openai/whisper-tiny")
-    model.eval()
-    sample_input = torch.randn(1, 80, 3000)
-    return model, sample_input
+def export(output_path="results/whisper.onnx"):
+    model, sample_input = whisper.load()
+    torch.onnx.export(
+        model.encoder,
+        sample_input,
+        output_path,
+        opset_version=17,
+        input_names=["input"],
+        output_names=["output"],
+        dynamic_axes={"input": {0: "batch_size"}, "output": {0: "batch_size"}}
+    )
+    print(f"Whisper exported to {output_path}")
