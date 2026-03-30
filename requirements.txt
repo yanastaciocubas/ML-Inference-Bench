@@ -1,0 +1,15 @@
+torch>=2.0.0
+torchvision
+onnx
+onnxruntime-gpu
+tensorrt
+pycuda
+plotly
+dash
+pandas
+numpy
+ultralytics
+transformers
+pynvml
+click
+pyyaml
