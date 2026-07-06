@@ -1,33 +1,86 @@
 # ML-Inference-Bench
-ML-Inference-Bench is a benchmarking framework for evaluating neural network inference performance using NVIDIA TensorRT. It systematically compares FP32, FP16, and INT8 precision modes across latency, throughput, memory usage, and predictive accuracy.
-The goal of this project is to provide a reproducible environment for studying the tradeoffs between model precision and inference efficiency, enabling informed decisions when deploying machine learning models in production environments.
 
-## Overview
+I've been interested in NVIDIA and roles working on deep neural networks for
+a while, and most of my other projects are about building and training
+models, not the part that actually matters once a model ships: making it
+fast and cheap enough to run in production. TensorRT is the tool
+NVIDIA-adjacent teams actually use for that, so I built ML-Inference-Bench
+to get real, hands-on experience with it instead of just reading docs:
+exporting models to ONNX, building engines at different precisions, and
+measuring what quantizing down to INT8 actually costs you in accuracy
+versus what it saves you in latency.
 
-In production, model efficiency matters as much as accuracy. ML-Inference-Bench provides:
+---
 
-- Automated TensorRT optimization for FP32, FP16, and INT8  
-- Reproducible benchmarking of latency, throughput, memory, and accuracy  
-- Visualization dashboard for easy performance analysis  
-- Preconfigured model zoo for quick experimentation  
+## What it does
+
+A CLI benchmarking framework that takes a pretrained PyTorch model, exports
+it to ONNX, builds a TensorRT engine at FP32, FP16, or INT8 precision, and
+measures latency (p50/p95/p99 via CUDA events), throughput, GPU memory, and
+accuracy drift versus the original model. Supports ResNet50, EfficientNet,
+YOLOv8, BERT-base, and Whisper-tiny out of the box.
+
+---
+
+
+## Pipeline
+
+```
+PyTorch model
+      |
+      v
+export to ONNX
+      |
+      v
+optimize with TensorRT (FP32 / FP16 / INT8)
+      |
+      v
+benchmark: latency, throughput, memory, accuracy
+      |
+      v
+export report (JSON / CSV / HTML)
+```
 
 ---
 
 ## Key Features
 
-- **Multi-Precision Optimization**: FP32, FP16, INT8 TensorRT engine building  
-- **Reproducible Benchmarking**: Latency, throughput, and GPU memory metrics using CUDA Events  
-- **Visualization Dashboard**: Interactive Plotly Dash dashboard for performance analysis  
-- **Model Zoo**: Supports ResNet50, EfficientNet, YOLOv8, BERT-base, Whisper-tiny  
-- **Exportable Reports**: JSON, CSV, HTML formats for sharing and analysis  
+- **Multi-precision optimization**: FP32, FP16, INT8 TensorRT engine
+  building, including a custom INT8 entropy calibrator with calibration
+  caching
+- **GPU-accurate latency measurement**: CUDA event-based timing with a
+  100-run warmup before the 1000-run measurement window, reported as
+  p50/p95/p99/mean
+- **Model zoo**: ResNet50, EfficientNet, YOLOv8, BERT-base, Whisper-tiny
+- **Exportable reports**: JSON, CSV, and a styled static HTML report per run
 
-## Pipeline
-PyTorch model
-      ↓
-export to ONNX
-      ↓
-optimize with TensorRT
-      ↓
-benchmark inference
-      ↓
-visualize performance tradeoffs
+## Usage
+
+```bash
+python main.py --model resnet50 --precision fp16 --report html
+python main.py --all-models --precision int8 --report json
+```
+
+Requires an NVIDIA GPU with CUDA and TensorRT installed. This isn't
+runnable on a laptop without a GPU. That's a real constraint of the
+problem, not a gap in the code.
+
+## Stack
+
+| What | How |
+|------|-----|
+| Export | PyTorch to ONNX |
+| Optimization | NVIDIA TensorRT (FP32/FP16/INT8) |
+| Latency measurement | CUDA events, PyCUDA |
+| Reports | pandas to JSON/CSV/HTML |
+
+## What I'd build next
+
+- An actual interactive dashboard for comparing runs (Plotly Dash). I'd
+  started scaffolding this and pulled it back out of the feature list once
+  I realized it wasn't real yet, rather than leave a claim that wasn't true
+- Run this against a real GPU box and publish actual numbers here instead
+  of leaving the results section for whoever runs it locally
+- Extend accuracy measurement beyond top-1 to something like mAP for
+  YOLOv8 specifically, since classification accuracy isn't the right
+  metric for a detection model
