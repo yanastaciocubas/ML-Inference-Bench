@@ -1,3 +1,6 @@
+import json
+import os
+
 import click
 from models import resnet50, efficientnet, yolov8, bert, whisper
 from exporters import resnet50 as export_resnet50
@@ -28,6 +31,31 @@ REPORTS = {
     "csv": csv_report,
     "html": html_report,
 }
+
+HISTORY_PATH = "results/all_runs.json"
+
+
+def update_run_history(new_results):
+    """Persist every run into a single running history file, keyed by
+    model + precision, so the dashboard can compare runs across time
+    instead of only ever seeing the most recent one."""
+    os.makedirs("results", exist_ok=True)
+
+    if os.path.exists(HISTORY_PATH):
+        with open(HISTORY_PATH) as f:
+            history = json.load(f)
+    else:
+        history = []
+
+    existing_keys = {(r["model"], r["precision"]) for r in new_results}
+    history = [h for h in history if (h["model"], h["precision"]) not in existing_keys]
+    history.extend(new_results)
+
+    with open(HISTORY_PATH, "w") as f:
+        json.dump(history, f, indent=2)
+
+    print(f"Updated run history: {HISTORY_PATH} ({len(history)} total runs)")
+
 
 @click.command()
 @click.option("--model", type=click.Choice(MODELS.keys()), default="resnet50", help="Model to benchmark")
@@ -77,10 +105,14 @@ def main(model, precision, report, all_models, dashboard):
             **accuracy_results,
         })
 
-    # Save report
+    # Save single-run report in the requested format
     report_path = f"results/report.{report}"
     REPORTS[report].save(results, report_path)
     print(f"\nDone! Report saved to {report_path}")
+
+    # Persist to running history so the dashboard can compare runs
+    update_run_history(results)
+
 
 if __name__ == "__main__":
     main()
