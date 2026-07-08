@@ -76,9 +76,6 @@ problem, not a gap in the code.
 
 ## What I'd build next
 
-- An actual interactive dashboard for comparing runs (Plotly Dash). I'd
-  started scaffolding this and pulled it back out of the feature list once
-  I realized it wasn't real yet, rather than leave a claim that wasn't true
 - Run this against a real GPU box and publish actual numbers here instead
   of leaving the results section for whoever runs it locally
 - Extend accuracy measurement beyond top-1 to something like mAP for
